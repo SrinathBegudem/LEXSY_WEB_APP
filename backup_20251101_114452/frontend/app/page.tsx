@@ -8,7 +8,7 @@ import { DocumentPreview } from '@/components/document-preview';
 import { ProgressTracker } from '@/components/progress-tracker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { api, ApiError, setAuthToken, streamGroq, streamDocumentAI } from '@/lib/api';
+import { api, ApiError, setAuthToken, streamGroq } from '@/lib/api';
 import type {
   AppState,
   ChatMessage,
@@ -21,6 +21,7 @@ import type {
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginButton } from '@/components/auth/login-button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function Home() {
   const { user, loading: authLoading, token } = useAuth();
@@ -167,7 +168,7 @@ export default function Home() {
     [state.sessionId, state.isLoading]
   );
 
-  // Document-aware AI chat handler with streaming
+  // Generic AI (Groq) chat handler with streaming
   const handleSendAIMessage = useCallback(
     async (message: string) => {
       if (aiLoading) return;
@@ -192,34 +193,12 @@ export default function Home() {
 
       try {
         let accumulated = '';
-        
-        // If we have a document loaded, use document-aware AI
-        if (state.document && state.sessionId) {
-          await streamDocumentAI(
-            message, 
-            {
-              sessionId: state.sessionId,
-              filename: state.document.filename || undefined,
-              placeholders: state.document.placeholders,
-              filledValues: state.document.filledValues,
-              previewHtml: state.previewHtml || undefined,
-            },
-            (chunk) => {
-              accumulated += chunk;
-              setAiMessages((prev) =>
-                prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m))
-              );
-            }
+        await streamGroq(message, (chunk) => {
+          accumulated += chunk;
+          setAiMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m))
           );
-        } else {
-          // Otherwise, use regular AI
-          await streamGroq(message, (chunk) => {
-            accumulated += chunk;
-            setAiMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m))
-            );
-          });
-        }
+        });
       } catch (e) {
         const errText = e instanceof Error ? e.message : 'AI error';
         setAiMessages((prev) =>
@@ -229,7 +208,7 @@ export default function Home() {
         setAiLoading(false);
       }
     },
-    [aiLoading, state.document, state.sessionId, state.previewHtml]
+    [aiLoading]
   );
 
   const loadPreview = useCallback(async (sessionId: string) => {
@@ -449,69 +428,34 @@ export default function Home() {
   const hasDocument = state.document !== null;
 
   return (
-    <main className="min-h-screen flex flex-col bg-slate-50">
+    <main className="min-h-screen flex flex-col bg-background">
       {/* Premium Header */}
-      <div className="border-b border-slate-200 bg-white sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left: Logo and Company Name */}
-            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-shrink">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  Lexsy
-                </h1>
-                <p className="text-xs text-slate-600 mt-0.5 hidden sm:block">
-                  AI-powered document automation
-                </p>
-              </div>
-              {user && (
-                <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-200">
-                  {user.photoURL && (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || 'User'}
-                      className="h-8 w-8 rounded-full border-2 border-blue-500"
-                    />
-                  )}
-                  <div className="text-sm">
-                    <p className="font-medium text-slate-900 truncate max-w-[150px]">
-                      {user.displayName || 'User'}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate max-w-[150px]">{user.email}</p>
-                  </div>
-                </div>
-              )}
+      <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-40 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground transition-all duration-300">
+                Lexsy
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 transition-all duration-300">
+                AI-powered legal document automation
+              </p>
             </div>
-
-            {/* Center: Document Name (when document is loaded) */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
+              <LoginButton />
+            </div>
             {state.document && (
-              <div className="hidden md:flex flex-col items-center justify-center flex-1 min-w-0 px-4">
-                <div className="text-sm font-semibold text-slate-900 truncate max-w-full text-center">
-                  📄 {state.document.filename}
+              <div className="hidden md:block text-right animate-fadeIn">
+                <div className="text-sm font-medium text-foreground transition-all duration-300">
+                  {state.document.filename}
                 </div>
-                <div className="text-xs text-slate-600 mt-0.5">
-                  {Object.keys(state.document.filledValues).length} / {state.document.placeholders.length} fields completed
+                <div className="text-xs text-muted-foreground mt-1 transition-all duration-300">
+                  {Object.keys(state.document.filledValues).length} / {state.document.placeholders.length} fields
                 </div>
               </div>
             )}
-
-            {/* Right: Login/Sign Out Button */}
-            <div className="flex-shrink-0">
-              <LoginButton />
-            </div>
           </div>
-          
-          {/* Mobile Document Info (shown below header on mobile) */}
-          {state.document && (
-            <div className="md:hidden mt-3 pt-3 border-t border-slate-200">
-              <div className="text-sm font-medium text-slate-900 truncate">
-                📄 {state.document.filename}
-              </div>
-              <div className="text-xs text-slate-600 mt-1">
-                {Object.keys(state.document.filledValues).length} / {state.document.placeholders.length} fields completed
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -521,20 +465,20 @@ export default function Home() {
           {/* Error Display */}
           {state.error && (
             <div className="fixed top-20 left-4 right-4 max-w-md mx-auto z-50 animate-slideInRight">
-              <div className="bg-red-50 border border-red-200 rounded-lg shadow-lg">
+              <Card className="border-destructive/50 bg-destructive/10 backdrop-blur-sm">
                 <div className="p-4 flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-sm text-red-800 flex-1">{state.error}</p>
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  <p className="text-sm text-destructive">{state.error}</p>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setState((prev) => ({ ...prev, error: null }))}
-                    className="ml-auto text-red-600 hover:text-red-700 hover:bg-red-100"
+                    className="ml-auto"
                   >
-                    ✕
+                    Dismiss
                   </Button>
                 </div>
-              </div>
+              </Card>
             </div>
           )}
 
@@ -578,16 +522,16 @@ export default function Home() {
             <div className="flex-1 flex relative">
               {/* Smooth loading overlay during processing */}
               {state.isLoading && (
-                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-white/60 backdrop-blur-sm animate-fadeIn">
-                  <div className="flex items-center gap-2 text-sm text-slate-700 bg-white border border-slate-300 px-4 py-2 rounded-full shadow-lg">
-                    <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
+                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-background/40 backdrop-blur-sm animate-fadeIn">
+                  <div className="flex items-center gap-2 text-sm text-foreground bg-card/80 border border-border px-3 py-2 rounded-full shadow-sm">
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
                     Processing...
                   </div>
                 </div>
               )}
               {/* LEFT: Progress Tracker - FIXED POSITION */}
               <div className="hidden xl:block fixed left-0 top-[120px] bottom-[80px] w-72 z-30">
-                <div className="h-full border-r border-slate-200 bg-white shadow-sm">
+                <div className="h-full border-r border-border/50 bg-card transition-all duration-300 shadow-sm">
                   <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide">
                     <ProgressTracker
                       placeholders={state.document.placeholders}
@@ -619,16 +563,16 @@ export default function Home() {
 
               {/* RIGHT: Assistant panel with tabs - FIXED POSITION */}
               <div className="hidden md:block fixed right-0 top-[130px] bottom-[76px] w-[340px] z-60">
-                <div className="h-full bg-white border-l border-slate-200 shadow-lg">
-                  <div className="border-b border-slate-200 p-2 flex gap-1">
+                <div className="h-full bg-card border-l border-border/50 shadow-lg transition-all duration-300">
+                  <div className="border-b border-border/60 p-2 flex gap-1">
                     <button
-                      className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${assistantTab === 'doc' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-slate-600 hover:bg-slate-100'}`}
+                      className={`flex-1 text-xs py-1.5 rounded-md ${assistantTab === 'doc' ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
                       onClick={() => setAssistantTab('doc')}
                     >
                       Doc Assistant
                     </button>
                     <button
-                      className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${assistantTab === 'ai' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-slate-600 hover:bg-slate-100'}`}
+                      className={`flex-1 text-xs py-1.5 rounded-md ${assistantTab === 'ai' ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
                       onClick={() => setAssistantTab('ai')}
                     >
                       AI
@@ -656,9 +600,7 @@ export default function Home() {
                       onSendMessage={handleSendAIMessage}
                       isLoading={aiLoading}
                       disabled={false}
-                      initialMessage={state.document 
-                        ? `I can help you understand this document! Ask me to:\n• Summarize the document\n• Explain specific sections or fields\n• Answer legal questions about the content\n• Clarify any terms or clauses\n\nI have full access to your ${state.document.filename} and can help with both document-specific and general legal questions.`
-                        : 'Ask me anything! Once you upload a document, I can help you understand it, answer questions about it, and provide legal guidance.'}
+                      initialMessage={'Ask me anything.'}
                     />
                   )}
                 </div>
@@ -666,7 +608,7 @@ export default function Home() {
 
               {/* MOBILE: Chat Fixed Window at Bottom (NO SCROLL) */}
               {(assistantTab === 'doc' ? state.chatMessages.length > 0 : aiMessages.length > 0) && (
-                <div className="md:hidden fixed bottom-20 right-4 left-4 max-w-md h-[35vh] bg-white border border-slate-300 rounded-2xl flex flex-col shadow-2xl z-50 animate-slideInRight overflow-hidden min-h-0">
+                <div className="md:hidden fixed bottom-20 right-4 left-4 max-w-md h-[35vh] bg-card border border-border/50 rounded-2xl flex flex-col shadow-2xl z-50 animate-slideInRight overflow-hidden min-h-0">
                   {assistantTab === 'doc' ? (
                     <ChatInterface
                       messages={state.chatMessages}
@@ -689,9 +631,7 @@ export default function Home() {
                       onSendMessage={handleSendAIMessage}
                       isLoading={aiLoading}
                       disabled={false}
-                      initialMessage={state.document 
-                        ? `I can help you understand this document! Ask me to:\n• Summarize the document\n• Explain specific sections\n• Answer legal questions\n\nI have access to your ${state.document.filename}.`
-                        : 'Ask me anything! I can help with general questions or, once you upload a document, answer questions about it.'}
+                      initialMessage={'Ask me anything.'}
                     />
                   )}
                 </div>
@@ -702,8 +642,8 @@ export default function Home() {
 
         {/* Action Buttons Footer - Below main content */}
         {hasDocument && state.document && (
-          <div className="border-t border-slate-200 bg-white shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="border-t border-border/50 bg-background/80 backdrop-blur-sm transition-all duration-300">
+            <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
               {state.isComplete && state.downloadUrl ? (
                 <>
                   <Button
@@ -756,19 +696,19 @@ export default function Home() {
 
         {/* Mobile Progress Bar - Shown only on small screens when document is open */}
         {hasDocument && state.document && (
-          <div className="xl:hidden border-t border-slate-200 bg-white px-4 py-3">
+          <div className="xl:hidden border-t border-border/50 bg-background/80 backdrop-blur-sm px-4 py-3 transition-all duration-300">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">Progress</span>
-                <span className="text-blue-600 font-bold">{state.progress.toFixed(0)}%</span>
+                <span className="font-semibold text-foreground">Progress</span>
+                <span className="text-primary font-bold transition-all duration-500">{state.progress.toFixed(0)}%</span>
               </div>
-              <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div className="relative h-1.5 bg-muted rounded-full overflow-hidden backdrop-blur-sm">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 ease-out"
+                  className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-500 ease-out shadow-sm"
                   style={{ width: `${state.progress}%` }}
                 />
               </div>
-              <div className="flex gap-2 text-xs text-slate-600">
+              <div className="flex gap-2 text-xs text-muted-foreground transition-all duration-300">
                 <span>{Object.keys(state.document.filledValues).length} completed</span>
                 <span>•</span>
                 <span>{state.document.placeholders.length - Object.keys(state.document.filledValues).length} remaining</span>

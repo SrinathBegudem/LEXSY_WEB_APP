@@ -199,10 +199,10 @@ export default function Home() {
             message, 
             {
               sessionId: state.sessionId,
-              filename: state.document.filename || undefined,
+              filename: state.document.filename,
               placeholders: state.document.placeholders,
               filledValues: state.document.filledValues,
-              previewHtml: state.previewHtml || undefined,
+              previewHtml: state.previewHtml,
             },
             (chunk) => {
               accumulated += chunk;

@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: lexsy-backend
+    env: python
+    region: ohio
+    plan: free
+    branch: main
+    buildCommand: bash build.sh
+    startCommand: gunicorn --worker-class gthread --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT app:app
+    rootDir: backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      # IMPORTANT: Set these in Render Dashboard (Settings > Environment)
+      # DO NOT commit sensitive values to git!
+      # 
+      # Required environment variables:
+      # - SECRET_KEY (generate with: python -c "import secrets; print(secrets.token_hex(32))")
+      # - GROQ_API_KEY (from https://console.groq.com)
+      # - CORS_ORIGINS (your Vercel frontend URL: https://your-app.vercel.app)
+      # 
+      # Optional (if using Firebase):
+      # - FIREBASE_TYPE
+      # - FIREBASE_PROJECT_ID
+      # - FIREBASE_PRIVATE_KEY_ID
+      # - FIREBASE_PRIVATE_KEY
+      # - FIREBASE_CLIENT_EMAIL
+      # - FIREBASE_CLIENT_ID
+      # - FIREBASE_AUTH_URI
+      # - FIREBASE_TOKEN_URI
+      # - FIREBASE_AUTH_PROVIDER_X509_CERT_URL
+      # - FIREBASE_CLIENT_X509_CERT_URL
+      #
+      # Optional (if using Redis):
+      # - REDIS_URL (Render Redis instance URL)
+
