@@ -5,6 +5,7 @@ services:
     plan: free
     maxmemoryPolicy: allkeys-lru
     region: ohio
+    ipAllowList: []
 
   # Backend web service
   - type: web
