@@ -208,6 +208,12 @@ def health_check():
 
 @app.route('/api/upload', methods=['POST'])
 def upload_document():
+    logger.info("=" * 60)
+    logger.info("📤 DOCUMENT UPLOAD REQUEST RECEIVED")
+    logger.info("=" * 60)
+    logger.info(f"   Request origin: {request.headers.get('Origin', 'Unknown')}")
+    logger.info(f"   Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+    logger.info(f"   Has file: {'document' in request.files}")
     """
     Handle document upload and initial processing.
     
@@ -307,7 +313,17 @@ def upload_document():
                 logger.info(f"Session linked to user: {user_id}")
         
         # Save session (this will also create history entry via session_manager)
+        logger.info(f"💾 Saving session data for: {session_id[:8]}...")
         save_session_data(session_id, session_data, user_id=user_id)
+        logger.info(f"✅ Session saved. Verifying...")
+        
+        # Verify session was saved
+        verify_session = get_session_data(session_id)
+        if verify_session:
+            logger.info(f"✅ Session verified in storage: {session_id[:8]}...")
+        else:
+            logger.error(f"❌ CRITICAL: Session was NOT saved properly: {session_id[:8]}...")
+        
         # Explicitly add session_created history entry
         session_manager.add_history(session_id, 'session_created', {
             'filename': filename,
@@ -327,7 +343,7 @@ def upload_document():
             'initial_message': ai_service.get_greeting_message(placeholders)
         }
         
-        logger.info(f"Upload successful for session {session_id}")
+        logger.info(f"📤 Upload response prepared for session {session_id[:8]}... with {len(placeholders)} placeholders")
         return jsonify(response_data), 200
         
     except RequestEntityTooLarge:
@@ -774,6 +790,13 @@ def get_session_stats():
 
 @app.route('/api/fill', methods=['POST'])
 def fill_field_directly():
+    logger.info("=" * 60)
+    logger.info("✏️  FILL FIELD REQUEST RECEIVED")
+    logger.info("=" * 60)
+    data = request.json
+    session_id = data.get('session_id') if data else None
+    logger.info(f"   Session ID from request: {session_id[:8] if session_id else 'MISSING'}...")
+    logger.info(f"   Request origin: {request.headers.get('Origin', 'Unknown')}")
     """
     Fill a field directly (for inline editing in document preview).
     Works for both filled and unfilled fields.
