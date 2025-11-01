@@ -16,11 +16,16 @@ _firebase_app = None
 
 
 def initialize_firebase():
-    """Initialize Firebase Admin SDK"""
+    """Initialize Firebase Admin SDK with detailed logging"""
     global _firebase_app
     
     if _firebase_app is not None:
+        logger.info("✅ Firebase Admin already initialized")
         return _firebase_app
+    
+    logger.info("=" * 60)
+    logger.info("🔍 FIREBASE INITIALIZATION")
+    logger.info("=" * 60)
     
     # Get service account file path
     service_account_path = os.environ.get(
@@ -28,19 +33,38 @@ def initialize_firebase():
         os.path.join(os.path.dirname(__file__), '..', 'firebase-service-account.json')
     )
     
+    logger.info(f"📋 Checking for Firebase service account file...")
+    logger.info(f"   Expected path: {service_account_path}")
+    logger.info(f"   Custom path env var: {os.environ.get('FIREBASE_SERVICE_ACCOUNT', 'NOT SET')}")
+    
     if not os.path.exists(service_account_path):
-        logger.warning("⚠️ Firebase service account file not found. Auth will be disabled.")
+        logger.warning("=" * 60)
+        logger.warning("⚠️  FIREBASE SERVICE ACCOUNT FILE NOT FOUND")
+        logger.warning("=" * 60)
         logger.warning(f"   Expected path: {service_account_path}")
-        logger.warning("   Set FIREBASE_SERVICE_ACCOUNT env var or place file in backend/ directory")
+        logger.warning("   🔧 Solutions:")
+        logger.warning("      1. Upload firebase-service-account.json to Render Dashboard")
+        logger.warning("         → Settings → Environment Files → Add File")
+        logger.warning("      2. Or set FIREBASE_SERVICE_ACCOUNT env var with full path")
+        logger.warning("   ⚠️  Firebase Authentication will be DISABLED")
+        logger.warning("=" * 60)
         return None
     
     try:
+        logger.info("   ✅ File found! Initializing Firebase Admin SDK...")
         cred = credentials.Certificate(service_account_path)
         _firebase_app = firebase_admin.initialize_app(cred)
-        logger.info("✅ Firebase Admin initialized successfully")
+        logger.info("=" * 60)
+        logger.info("✅ FIREBASE ADMIN INITIALIZED SUCCESSFULLY")
+        logger.info("=" * 60)
         return _firebase_app
     except Exception as e:
-        logger.error(f"❌ Failed to initialize Firebase: {e}")
+        logger.error("=" * 60)
+        logger.error("❌ FIREBASE INITIALIZATION FAILED")
+        logger.error("=" * 60)
+        logger.error(f"   Error Type: {type(e).__name__}")
+        logger.error(f"   Error Message: {str(e)}")
+        logger.error("=" * 60)
         return None
 
 

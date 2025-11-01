@@ -86,7 +86,7 @@ CORS(
     max_age=3600
 )
 
-# Configure logging
+# Configure logging with enhanced format
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -97,14 +97,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Log startup information
+logger.info("=" * 60)
+logger.info("🚀 LEXSY BACKEND STARTING")
+logger.info("=" * 60)
+logger.info(f"   Environment: {os.environ.get('FLASK_ENV', 'development')}")
+logger.info(f"   Python Version: {os.sys.version.split()[0]}")
+logger.info(f"   Port: {os.environ.get('PORT', '5001')}")
+logger.info(f"   Upload Folder: {app.config['UPLOAD_FOLDER']}")
+logger.info(f"   Max File Size: {app.config['MAX_CONTENT_LENGTH'] / (1024*1024):.1f} MB")
+logger.info("=" * 60)
+
 # Ensure required directories exist
 for folder in [app.config['UPLOAD_FOLDER'], app.config['PROCESSED_FOLDER'], 'logs']:
     Path(folder).mkdir(parents=True, exist_ok=True)
 
-# Initialize services
+# Initialize services with logging
+logger.info("🔧 Initializing services...")
 doc_processor = DocumentProcessor()
+logger.info("   ✅ DocumentProcessor initialized")
 ai_service = AIService()
+logger.info("   ✅ AIService initialized")
 placeholder_detector = PlaceholderDetector()
+logger.info("   ✅ PlaceholderDetector initialized")
+logger.info("   🔍 Checking session manager...")
+# Session manager is initialized as a module-level instance
+# It will log its own connection status
+logger.info("=" * 60)
 
 # Allowed file extensions for upload
 ALLOWED_EXTENSIONS = {'docx', 'doc'}

@@ -47,40 +47,105 @@ class SessionManager:
         self._connect_redis()
     
     def _connect_redis(self):
-        """Attempt to connect to Redis"""
+        """Attempt to connect to Redis with detailed logging"""
+        logger.info("=" * 60)
+        logger.info("🔍 REDIS CONNECTION ATTEMPT")
+        logger.info("=" * 60)
+        
+        # Log configuration
+        if REDIS_URL:
+            logger.info(f"📋 REDIS_URL is set (length: {len(REDIS_URL)} chars)")
+            logger.info(f"   URL preview: {REDIS_URL[:20]}...{REDIS_URL[-10:] if len(REDIS_URL) > 30 else ''}")
+        else:
+            logger.info("📋 REDIS_URL is NOT set")
+            logger.info(f"📋 Using individual settings:")
+            logger.info(f"   REDIS_HOST: {REDIS_HOST}")
+            logger.info(f"   REDIS_PORT: {REDIS_PORT}")
+            logger.info(f"   REDIS_DB: {REDIS_DB}")
+            logger.info(f"   REDIS_PASSWORD: {'***set***' if REDIS_PASSWORD else 'NOT set'}")
+        
         try:
             # Prefer REDIS_URL (standard for cloud providers like Render)
             if REDIS_URL:
                 from redis import ConnectionPool
+                logger.info("🔌 Attempting connection via REDIS_URL...")
                 pool = ConnectionPool.from_url(
                     REDIS_URL,
                     decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_connect_timeout=10,
+                    socket_timeout=10,
+                    retry_on_timeout=True
                 )
                 self.redis_client = redis.Redis(connection_pool=pool)
-                logger.info(f"✅ Connecting to Redis via REDIS_URL")
             else:
                 # Fallback to individual settings
+                logger.info(f"🔌 Attempting connection via individual settings ({REDIS_HOST}:{REDIS_PORT})...")
                 self.redis_client = redis.Redis(
                     host=REDIS_HOST,
                     port=REDIS_PORT,
                     db=REDIS_DB,
                     password=REDIS_PASSWORD,
                     decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_connect_timeout=10,
+                    socket_timeout=10,
+                    retry_on_timeout=True
                 )
-                logger.info(f"✅ Connecting to Redis at {REDIS_HOST}:{REDIS_PORT}")
             
-            # Test connection
-            self.redis_client.ping()
-            self.use_redis = True
-            logger.info(f"✅ Redis connected successfully")
-        except (redis.ConnectionError, redis.TimeoutError, Exception) as e:
-            logger.warning(f"⚠️ Redis not available: {e}. Using in-memory fallback.")
+            # Test connection with detailed logging
+            logger.info("🧪 Testing Redis connection (ping)...")
+            result = self.redis_client.ping()
+            if result:
+                self.use_redis = True
+                logger.info("=" * 60)
+                logger.info("✅ REDIS CONNECTION SUCCESSFUL")
+                logger.info("=" * 60)
+                # Get Redis info
+                try:
+                    info = self.redis_client.info('server')
+                    logger.info(f"   Redis Version: {info.get('redis_version', 'unknown')}")
+                    logger.info(f"   Redis Mode: {'Cluster' if 'cluster' in str(REDIS_URL or '').lower() else 'Standalone'}")
+                except:
+                    pass
+            else:
+                raise Exception("Ping returned False")
+                
+        except redis.ConnectionError as e:
+            logger.error("=" * 60)
+            logger.error("❌ REDIS CONNECTION FAILED - Connection Error")
+            logger.error("=" * 60)
+            logger.error(f"   Error: {str(e)}")
+            logger.error("   🔧 Possible causes:")
+            if REDIS_URL:
+                logger.error("      - REDIS_URL is incorrect or malformed")
+                logger.error("      - Redis service hasn't been created yet")
+            else:
+                logger.error(f"      - Cannot reach Redis at {REDIS_HOST}:{REDIS_PORT}")
+                logger.error("      - Redis service is not running")
+                logger.error("      - Network/firewall blocking connection")
+            logger.error("   💡 Solution: Check Render Dashboard and ensure Redis service is created")
+            logger.error("   ⚠️  Falling back to in-memory session storage (sessions will not persist)")
             self.use_redis = False
             self.redis_client = None
+        except redis.TimeoutError as e:
+            logger.error("=" * 60)
+            logger.error("❌ REDIS CONNECTION FAILED - Timeout")
+            logger.error("=" * 60)
+            logger.error(f"   Error: {str(e)}")
+            logger.error("   🔧 Possible causes: Redis is unreachable or slow")
+            logger.error("   ⚠️  Falling back to in-memory session storage")
+            self.use_redis = False
+            self.redis_client = None
+        except Exception as e:
+            logger.error("=" * 60)
+            logger.error("❌ REDIS CONNECTION FAILED - Unexpected Error")
+            logger.error("=" * 60)
+            logger.error(f"   Error Type: {type(e).__name__}")
+            logger.error(f"   Error Message: {str(e)}")
+            logger.error("   ⚠️  Falling back to in-memory session storage")
+            self.use_redis = False
+            self.redis_client = None
+        
+        logger.info("=" * 60)
     
     def _ensure_connection(self):
         """Reconnect if connection was lost"""
