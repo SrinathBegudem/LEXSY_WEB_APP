@@ -121,8 +121,17 @@ logger.info("   ✅ AIService initialized")
 placeholder_detector = PlaceholderDetector()
 logger.info("   ✅ PlaceholderDetector initialized")
 logger.info("   🔍 Checking session manager...")
-# Session manager is initialized as a module-level instance
-# It will log its own connection status
+# Force session manager initialization logging by accessing it
+logger.info(f"   Redis Status: {'✅ Connected' if session_manager.use_redis else '❌ Using in-memory fallback'}")
+if not session_manager.use_redis:
+    logger.warning("   ⚠️  Redis is NOT connected - sessions will not persist across restarts!")
+    logger.warning("   💡 Solution: Verify REDIS_URL is set in Render environment variables")
+logger.info("=" * 60)
+
+# Initialize Firebase (for auth)
+logger.info("🔐 Initializing Firebase...")
+from services.firebase_auth import initialize_firebase
+initialize_firebase()
 logger.info("=" * 60)
 
 # Allowed file extensions for upload
