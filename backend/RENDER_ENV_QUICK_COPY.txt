@@ -1,0 +1,50 @@
+# ============================================================================
+# RENDER ENVIRONMENT VARIABLES - QUICK COPY & PASTE
+# ============================================================================
+# Copy each variable below and paste into Render Dashboard:
+# Settings → Environment → Add Environment Variable
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# REQUIRED VARIABLES
+# ----------------------------------------------------------------------------
+
+FLASK_ENV=production
+
+PORT=10000
+
+# ⚠️ SECRET_KEY - Use one of these methods to generate:
+# Method 1 (Node.js): node -e "const crypto = require('crypto'); console.log(crypto.randomBytes(32).toString('hex'))"
+# Method 2 (Anaconda Python): /opt/anaconda3/bin/python -c "import secrets; print(secrets.token_hex(32))"
+# Method 3 (Online): https://randomkeygen.com/
+# 
+# Generated key (ready to use):
+SECRET_KEY=4a6be0d4857b4f0816eb617d7d2aaf38065db78c21622bec5ac966bee0fa1d34
+
+CORS_ORIGINS=https://lexsy-web-app.vercel.app,https://www.lexsy-web-app.vercel.app
+
+GROQ_API_KEY=your_groq_api_key_here
+
+# ----------------------------------------------------------------------------
+# OPTIONAL (Recommended defaults)
+# ----------------------------------------------------------------------------
+
+MAX_FILE_SIZE=10485760
+
+UPLOAD_FOLDER=uploads
+
+PROCESSED_FOLDER=processed
+
+# ----------------------------------------------------------------------------
+# OPTIONAL - Redis (only if using Redis)
+# ----------------------------------------------------------------------------
+
+# REDIS_URL=redis://red-xxxxx:6379
+
+# ----------------------------------------------------------------------------
+# FIREBASE SETUP (Different from env vars - upload as FILE)
+# ----------------------------------------------------------------------------
+# Go to: Render Dashboard → Settings → Environment Files
+# Upload: firebase-service-account.json
+# ============================================================================
+

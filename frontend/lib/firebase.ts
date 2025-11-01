@@ -15,13 +15,13 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 // Firebase configuration for Lexsy
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCyfnt8HefiXgnNaY4T1bMA_hOmb032Qkg",
-  authDomain: "lexsy-d1627.firebaseapp.com",
-  projectId: "lexsy-d1627",
-  storageBucket: "lexsy-d1627.firebasestorage.app",
-  messagingSenderId: "817150269429",
-  appId: "1:817150269429:web:f6802d8d919812a10132bc",
-  measurementId: "G-BV50JWYMPG"
+  apiKey: "AIzaSyATjXWNHuFB6L_OaXZRjMf41ZgVeo7q524",
+  authDomain: "lexsy-ai-app.firebaseapp.com",
+  projectId: "lexsy-ai-app",
+  storageBucket: "lexsy-ai-app.firebasestorage.app",
+  messagingSenderId: "885588494049",
+  appId: "1:885588494049:web:87bd8e80741930cd0cd9a0",
+  measurementId: "G-JXCZ7BPX0C"
 };
 
 // Initialize Firebase
