@@ -1,0 +1,142 @@
+# Environment Variables (CRITICAL - NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# Python Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask & Python
+instance/
+.webassets-cache
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.dylib
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+
+# Uploaded Documents & Processed Files
+uploads/
+processed/
+temp/
+*.docx
+*.doc
+*.pdf
+!test_fixtures/*.docx
+
+# Session Data
+sessions/
+*.json
+!requirements.txt
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+nosetests.xml
+coverage.xml
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# Security & Secrets
+*.pem
+*.key
+*.cert
+*.crt
+secret_key.txt
+secrets/
+
+# Firebase Service Account (CRITICAL - NEVER COMMIT)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
+
+# Logs
+logs/
+*.log
+pip-log.txt
+
