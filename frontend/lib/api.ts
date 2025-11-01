@@ -8,23 +8,29 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-// Debug logging (only in development)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('🔍 API Configuration:', {
-    API_URL,
-    'NEXT_PUBLIC_API_URL env': process.env.NEXT_PUBLIC_API_URL,
-    'Fallback to localhost': !process.env.NEXT_PUBLIC_API_URL
-  });
-}
-
-// Runtime check - warn if using wrong URL
+// ALWAYS log API URL in browser console (for debugging)
 if (typeof window !== 'undefined') {
+  console.log('🔍 API URL Configuration:', {
+    'Current API_URL': API_URL,
+    'NEXT_PUBLIC_API_URL env': process.env.NEXT_PUBLIC_API_URL || 'NOT SET',
+    'Is using localhost fallback': API_URL === 'http://localhost:5001',
+    'Expected backend URL': 'https://lexsy-backend-s2dv.onrender.com'
+  });
+  
   const currentHost = window.location.hostname;
-  if (API_URL.includes(currentHost) && API_URL.includes('vercel.app')) {
-    console.error('❌ CRITICAL: API_URL is pointing to frontend domain!', {
-      API_URL,
-      currentHost,
-      'Expected': 'Should point to backend (lexsy-backend-*.onrender.com)'
+  if (API_URL.includes(currentHost) || API_URL.includes('lexsy-web-app')) {
+    console.error('❌ CRITICAL ERROR: API_URL is pointing to FRONTEND domain!', {
+      'Current API_URL': API_URL,
+      'Frontend Host': currentHost,
+      'Expected': 'https://lexsy-backend-s2dv.onrender.com',
+      'Fix': 'Set NEXT_PUBLIC_API_URL in Vercel Dashboard → Settings → Environment Variables'
+    });
+  }
+  
+  if (API_URL.includes('localhost')) {
+    console.warn('⚠️ WARNING: API_URL is using localhost fallback!', {
+      'Current API_URL': API_URL,
+      'Fix': 'Set NEXT_PUBLIC_API_URL in Vercel Dashboard'
     });
   }
 }
