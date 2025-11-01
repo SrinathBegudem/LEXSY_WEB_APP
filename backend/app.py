@@ -170,10 +170,12 @@ def index():
     """
     Root endpoint - returns API information.
     """
+    logger.info(f"📥 Root endpoint hit from: {request.headers.get('Origin', 'Direct')}")
     return jsonify({
         'name': 'Legal Document Automation API',
         'version': '1.0.0',
         'status': 'operational',
+        'backend_url': request.url_root,
         'endpoints': [
             '/api/upload',
             '/api/chat',
