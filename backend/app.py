@@ -36,6 +36,17 @@ from services.firebase_auth import verify_token, get_token_from_request
 # Load environment variables from .env file
 load_dotenv()
 
+# Configure logging early (before other initialization that might use logger)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Initialize Flask application
 app = Flask(__name__)
 
@@ -86,16 +97,22 @@ CORS(
     max_age=3600
 )
 
-# Configure logging with enhanced format
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Log CORS configuration for debugging
+logger.info("=" * 60)
+logger.info("🌐 CORS CONFIGURATION")
+logger.info("=" * 60)
+logger.info(f"   CORS_ORIGINS env var: {_env_origins or 'NOT SET'}")
+logger.info(f"   CORS_ALLOW_ALL: {_allow_all}")
+if allowed_origins == '*':
+    logger.info("   Allowed origins: * (ALLOW ALL)")
+else:
+    logger.info(f"   Allowed origins ({len(allowed_origins)}):")
+    for origin in allowed_origins:
+        logger.info(f"      - {origin}")
+if not _env_origins and not _allow_all:
+    logger.warning("   ⚠️  CORS_ORIGINS not set - only localhost origins allowed!")
+    logger.warning("   💡 Fix: Set CORS_ORIGINS in Render Dashboard → Environment Variables")
+logger.info("=" * 60)
 
 # Log startup information
 logger.info("=" * 60)
