@@ -1,4 +1,12 @@
 services:
+  # Redis service for persistent session storage
+  - type: keyvalue
+    name: lexsy-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    region: ohio
+
+  # Backend web service
   - type: web
     name: lexsy-backend
     env: python
@@ -16,6 +24,12 @@ services:
         value: 3.11.0
       - key: PORT
         value: 10000
+      # Automatically connect to Redis service
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: lexsy-redis
+          property: connectionString
       # IMPORTANT: Set these in Render Dashboard (Settings > Environment)
       # DO NOT commit sensitive values to git!
       # 
@@ -35,7 +49,4 @@ services:
       # - FIREBASE_TOKEN_URI
       # - FIREBASE_AUTH_PROVIDER_X509_CERT_URL
       # - FIREBASE_CLIENT_X509_CERT_URL
-      #
-      # Optional (if using Redis):
-      # - REDIS_URL (Render Redis instance URL)
 
