@@ -165,6 +165,9 @@ class SessionManager:
         """
         self._ensure_connection()
         
+        # Log session lookup attempt
+        logger.info(f"🔍 Looking up session: {session_id[:8]}... (Redis: {self.use_redis})")
+        
         if self.use_redis:
             try:
                 key = f"{SESSION_PREFIX}{session_id}"
@@ -172,21 +175,41 @@ class SessionManager:
                 
                 if data:
                     session_data = json.loads(data)
+                    logger.info(f"✅ Session found in Redis: {session_id[:8]}...")
                     # Update last access time
                     session_data['last_accessed_at'] = datetime.now().isoformat()
                     # Save updated session
                     self.save_session(session_id, session_data)
                     return session_data
+                else:
+                    logger.warning(f"❌ Session NOT found in Redis: {session_id[:8]}...")
+                    logger.warning(f"   Key searched: {key}")
+                    # Check if any sessions exist
+                    try:
+                        all_keys = self.redis_client.keys(f"{SESSION_PREFIX}*")
+                        logger.warning(f"   Total sessions in Redis: {len(all_keys)}")
+                        if all_keys:
+                            logger.warning(f"   Sample keys: {[k[:20] for k in all_keys[:3]]}")
+                    except:
+                        pass
                 return None
             except Exception as e:
-                logger.error(f"Redis get error: {e}")
+                logger.error(f"❌ Redis get error: {e}")
+                logger.error(f"   Error type: {type(e).__name__}")
                 # Fallback to in-memory
-                return self.fallback_store.get(session_id)
+                fallback_data = self.fallback_store.get(session_id)
+                if fallback_data:
+                    logger.info(f"✅ Found session in fallback store: {session_id[:8]}...")
+                return fallback_data
         else:
             # In-memory fallback
             session_data = self.fallback_store.get(session_id)
             if session_data:
+                logger.info(f"✅ Session found in fallback: {session_id[:8]}...")
                 session_data['last_accessed_at'] = datetime.now().isoformat()
+            else:
+                logger.warning(f"❌ Session NOT found in fallback: {session_id[:8]}...")
+                logger.warning(f"   Fallback store has {len(self.fallback_store)} sessions")
             return session_data
     
     def save_session(self, session_id: str, data: Dict[str, Any], user_id: Optional[str] = None) -> bool:
@@ -222,16 +245,23 @@ class SessionManager:
                 ttl_seconds = SESSION_TIMEOUT_HOURS * 3600
                 
                 # Save session data
+                serialized_data = json.dumps(data, default=str)
                 self.redis_client.setex(
                     key,
                     ttl_seconds,
-                    json.dumps(data, default=str)
+                    serialized_data
                 )
+                
+                # Verify it was saved
+                verify = self.redis_client.get(key)
+                if verify:
+                    logger.info(f"✅ Saved session {session_id[:8]}... to Redis (TTL: {ttl_seconds}s)")
+                else:
+                    logger.error(f"❌ Failed to verify session save: {session_id[:8]}...")
                 
                 # Update statistics
                 self._update_stats(session_id, data)
                 
-                logger.debug(f"Saved session {session_id[:8]}... to Redis")
                 return True
             except Exception as e:
                 logger.error(f"Redis save error: {e}")
