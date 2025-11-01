@@ -23,7 +23,8 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Redis configuration
+# Redis configuration - support both REDIS_URL and individual settings
+REDIS_URL = os.environ.get('REDIS_URL', None)
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 REDIS_DB = int(os.environ.get('REDIS_DB', 0))
@@ -48,19 +49,34 @@ class SessionManager:
     def _connect_redis(self):
         """Attempt to connect to Redis"""
         try:
-            self.redis_client = redis.Redis(
-                host=REDIS_HOST,
-                port=REDIS_PORT,
-                db=REDIS_DB,
-                password=REDIS_PASSWORD,
-                decode_responses=True,
-                socket_connect_timeout=5,
-                socket_timeout=5
-            )
+            # Prefer REDIS_URL (standard for cloud providers like Render)
+            if REDIS_URL:
+                from redis import ConnectionPool
+                pool = ConnectionPool.from_url(
+                    REDIS_URL,
+                    decode_responses=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5
+                )
+                self.redis_client = redis.Redis(connection_pool=pool)
+                logger.info(f"✅ Connecting to Redis via REDIS_URL")
+            else:
+                # Fallback to individual settings
+                self.redis_client = redis.Redis(
+                    host=REDIS_HOST,
+                    port=REDIS_PORT,
+                    db=REDIS_DB,
+                    password=REDIS_PASSWORD,
+                    decode_responses=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5
+                )
+                logger.info(f"✅ Connecting to Redis at {REDIS_HOST}:{REDIS_PORT}")
+            
             # Test connection
             self.redis_client.ping()
             self.use_redis = True
-            logger.info(f"✅ Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+            logger.info(f"✅ Redis connected successfully")
         except (redis.ConnectionError, redis.TimeoutError, Exception) as e:
             logger.warning(f"⚠️ Redis not available: {e}. Using in-memory fallback.")
             self.use_redis = False
