@@ -774,6 +774,11 @@ def fill_field_directly():
         # Retrieve session data
         session_data = get_session_data(session_id)
         if not session_data:
+            # Log for debugging
+            logger.warning(
+                f"Fill field request with invalid session: {session_id[:8]}... "
+                f"Redis available: {session_manager.use_redis}"
+            )
             return jsonify({
                 'error': 'Session expired',
                 'message': 'Your session has expired. Please upload the document again.',
