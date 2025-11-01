@@ -8,6 +8,27 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
+// Debug logging (only in development)
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('🔍 API Configuration:', {
+    API_URL,
+    'NEXT_PUBLIC_API_URL env': process.env.NEXT_PUBLIC_API_URL,
+    'Fallback to localhost': !process.env.NEXT_PUBLIC_API_URL
+  });
+}
+
+// Runtime check - warn if using wrong URL
+if (typeof window !== 'undefined') {
+  const currentHost = window.location.hostname;
+  if (API_URL.includes(currentHost) && API_URL.includes('vercel.app')) {
+    console.error('❌ CRITICAL: API_URL is pointing to frontend domain!', {
+      API_URL,
+      currentHost,
+      'Expected': 'Should point to backend (lexsy-backend-*.onrender.com)'
+    });
+  }
+}
+
 // Optional auth token (Firebase) injected from UI
 let AUTH_TOKEN: string | null = null;
 export function setAuthToken(token: string | null) {
